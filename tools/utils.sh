@@ -2,12 +2,7 @@
 set -e
 export HELM_EXPERIMENTAL_OCI=1
 
-if [ $(basename $(pwd)) == "tools" ]
-then
-    CHART_PATH="imap2telegram-helm"
-else
-    CHART_PATH="tools/imap2telegram-helm"
-fi
+CHART_PATH="imap2telegram-helm"
 
 
 IMAGE="ghcr.io/oleksandr-mazur/imap2telegram-helm"
