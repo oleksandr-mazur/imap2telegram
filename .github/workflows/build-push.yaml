@@ -1,0 +1,72 @@
+name: Build and push image
+
+on:
+  push:
+    tags:
+    - 0.*
+    - 1.*
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  HELM_NAME: imap2telegram-helm
+  HELM_EXPERIMENTAL_OCI: 1 #enable OCI support
+  HELM_VERSION_TO_INSTALL: 3.6.0 # version of HEL to install
+  GCR_IMAGE: ghcr.io/${{ github.repository_owner }}/imap2telegram-helm
+
+jobs:
+
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          context: .
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.meta.outputs.tags }}
+
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: install helm
+        uses: Azure/setup-helm@v1
+        with:
+          version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
+
+      - name: login to registry using helm
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ${{ env.GCR_IMAGE }} --username ${{ github.repository_owner }} --password-stdin
+
+      - name: configure helm chart
+        run: |
+          ./tools/utils.sh configure_helm
+
+      - name: save helm chart to local registry
+        run: |
+          ./tools/utils.sh helm_save ${{ env.GCR_IMAGE }}
+
+      - name: publish chart to registry
+        run: |
+          ./tools/utils.sh helm_push ${{ env.GCR_IMAGE }}
+
+      - name: logout
+        run: |
+          helm registry logout ${{ env.GCR_IMAGE }}
