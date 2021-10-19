@@ -19,17 +19,19 @@ bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
 log = logging.getLogger(__name__)
 
 
-def get_users():
-    """
-    Return users list
+TEMPLATE = """
+**From**: {From}
+**Date**: {Date}
+**Subject**: {Subject}
 
-    In this example returns some random ID's
-    """
+**Body**
+===============
+{Body}
+"""
 
-    yield from USER_IDS
 
-
-async def send_message(user_id: int, msg: dict, disable_notification: bool = False) -> bool:
+async def send_message(user_id: int, msg: dict,
+                       disable_notification: bool = False) -> bool:
     """
     Safe messages sender
 
@@ -38,7 +40,10 @@ async def send_message(user_id: int, msg: dict, disable_notification: bool = Fal
     :param disable_notification:
     :return:
     """
+
     try:
+        await bot.send_message(user_id, TEMPLATE.format(**msg),
+                               parse_mode=types.ParseMode.MARKDOWN)
         for attachment in msg['Attachments']:
             await bot.send_photo(user_id,
                                  attachment['content'],
@@ -70,7 +75,7 @@ async def broadcaster(msg) -> int:
     """
     count = 0
     try:
-        for user_id in get_users():
+        for user_id in USER_IDS:
             if await send_message(user_id, msg):
                 count += 1
             await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)

@@ -5,14 +5,21 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/oleksandr-mazur/imap2telegram/imap2telegram
+  repository: ghcr.io/oleksandr-mazur/imap2telegram
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.0.1"
+  tag: 0.0.2
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+environments:
+   IMAP_HOST: ""
+   IMAP_USER: ""
+   IMAP_PASSWORD: ""
+   TOKEN: ""
+   USER_IDS: ""
 
 serviceAccount:
   # Specifies whether a service account should be created

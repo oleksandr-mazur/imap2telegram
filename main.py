@@ -6,6 +6,7 @@ Created on Thu Oct 14 20:30:39 2021
 @author: admin@devops.kiev.ua
 """
 import os
+import sys
 import aioimaplib
 import asyncio
 import logging
@@ -16,32 +17,32 @@ IMAP_HOST = os.environ["IMAP_HOST"]
 IMAP_USER = os.environ["IMAP_USER"]
 IMAP_PASSWORD = os.environ["IMAP_PASSWORD"]
 
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
+
+logging.basicConfig(format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s", level=logging.DEBUG, stream=sys.stdout)
+
+
+log = logging.getLogger("main")
 
 
 async def wait_for_new_message(host: str, user: str, password: str) -> None:
     log.info("Connecting to %s", IMAP_HOST)
-    imap_client = aioimaplib.IMAP4_SSL(host=host)
+    imap_client = aioimaplib.IMAP4_SSL(host=host, timeout=30)
     await imap_client.wait_hello_from_server()
 
     await imap_client.login(user, password)
     await imap_client.select()
 
-    idle = await imap_client.idle_start(timeout=10)
-    while imap_client.has_pending_idle():
+    while True:
+        idle = await imap_client.idle_start(timeout=60)
         msg = await imap_client.wait_server_push()
         if (email_id := get_new_email_id(msg)) is not None:
+            log.info("Got new email id %s", email_id)
             await asyncio.create_task(
-                get_and_parse_email(host,
-                                    user,
-                                    password,
-                                    email_id))
-        if msg == "DONE":
-            imap_client.idle_done()
-            await asyncio.wait_for(idle, 1)
+                get_and_parse_email(host, user, password, email_id))
+        log.info(msg)
 
-    await imap_client.logout()
+        imap_client.idle_done()
+        await asyncio.wait_for(idle, 30)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
