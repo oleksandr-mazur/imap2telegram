@@ -7,8 +7,12 @@ import asyncio
 import logging
 import aioimaplib
 
-from email.header import decode_header, make_header
+from datetime import datetime
+
 from telegram import broadcaster
+
+from email.header import decode_header, make_header
+from email.utils import parsedate_tz, mktime_tz
 
 
 log = logging.getLogger(__name__)
@@ -24,6 +28,17 @@ def get_new_email_id(msg: dict) -> typing.Union[None, int]:
         return attr.get("EXISTS")
     if "FETCH" and "EXISTS":
         return attr.get("EXISTS")
+
+
+def parse_header(data):
+    return str(make_header(decode_header(data)))
+
+
+def parse_user_mail(addr, only_mail=False):
+    alias, mail = email.utils.parseaddr(addr)
+    if only_mail:
+        return mail
+    return (mail, parse_header(alias))
 
 
 def parse_email(email_obj: email.message) -> dict:
@@ -48,14 +63,14 @@ def parse_email(email_obj: email.message) -> dict:
     else:
         body = email_obj.get_payload()
 
-    sender = email_obj['From']
-
+    mail, alias = parse_user_mail(email_obj['From'])
     return {
-        'From': sender,
-        'To': str(email_obj['To']),
-        'Date': str(email_obj['Date']),
-        'Subject': str(make_header(decode_header(email_obj['Subject']))),
-        'Body': body,
+        'From': mail,
+        'Alias': alias,
+        'To': parse_user_mail(email_obj['To'], only_mail=True),
+        'Date': datetime.fromtimestamp(mktime_tz(parsedate_tz(email_obj['Date']))),
+        'Subject': parse_header(email_obj['Subject']),
+        'Body': parse_header(body),
         'Attachments': attachments}
 
 
@@ -70,9 +85,9 @@ async def get_and_parse_email(host: str, user: str, password: str,
     _, data = await client.fetch(email_id, '(RFC822)')
     if len(data) > 1:
         email_message = email.message_from_bytes(data[1])
-        log.info("Got new message from <%s>", email_message['From'])
         msg = parse_email(email_message)
-        asyncio.create_task(broadcaster(msg))
+        log.info("Got new message from %s <%s>", msg['Alias'], msg['From'])
+        await asyncio.create_task(broadcaster(msg))
     else:
         log.error(data)
     await client.logout()

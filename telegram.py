@@ -13,6 +13,7 @@ from aiogram import Bot, types
 from aiogram.utils import exceptions
 
 API_TOKEN = os.environ["TOKEN"]
+ONLY_ATTACHMENT = os.getenv("ONLY_ATTACHMENT") in ("True", "true", "yes")
 USER_IDS = os.environ["USER_IDS"].replace(" ", "").split(",")
 
 bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
@@ -25,7 +26,7 @@ TEMPLATE = """
 **Subject**: {Subject}
 
 **Body**
-===============
+===================
 {Body}
 """
 
@@ -42,12 +43,16 @@ async def send_message(user_id: int, msg: dict,
     """
 
     try:
-        await bot.send_message(user_id, TEMPLATE.format(**msg),
-                               parse_mode=types.ParseMode.MARKDOWN)
-        for attachment in msg['Attachments']:
-            await bot.send_photo(user_id,
-                                 attachment['content'],
-                                 caption=msg['Date'])
+        if ONLY_ATTACHMENT:
+            for attachment in msg['Attachments']:
+                await bot.send_photo(user_id,
+                                     attachment['content'],
+                                     caption=msg['Body'])
+        else:
+            await bot.send_message(user_id, TEMPLATE.format(**msg),
+                                   parse_mode=types.ParseMode.MARKDOWN)
+            for attachment in msg['Attachments']:
+                await bot.send_photo(user_id, attachment['content'])
 
     except exceptions.BotBlocked:
         log.error(f"Target [ID:{user_id}]: blocked by user")

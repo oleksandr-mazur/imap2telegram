@@ -17,8 +17,13 @@ IMAP_HOST = os.environ["IMAP_HOST"]
 IMAP_USER = os.environ["IMAP_USER"]
 IMAP_PASSWORD = os.environ["IMAP_PASSWORD"]
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-logging.basicConfig(format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s", level=logging.DEBUG, stream=sys.stdout)
+
+logging.basicConfig(
+    format="[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
+    level=logging.getLevelName(LOG_LEVEL),
+    stream=sys.stdout)
 
 
 log = logging.getLogger("main")
@@ -36,7 +41,6 @@ async def wait_for_new_message(host: str, user: str, password: str) -> None:
         idle = await imap_client.idle_start(timeout=60)
         msg = await imap_client.wait_server_push()
         if (email_id := get_new_email_id(msg)) is not None:
-            log.info("Got new email id %s", email_id)
             await asyncio.create_task(
                 get_and_parse_email(host, user, password, email_id))
         log.info(msg)
