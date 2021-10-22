@@ -68,7 +68,8 @@ def parse_email(email_obj: email.message) -> dict:
         'From': mail,
         'Alias': alias,
         'To': parse_user_mail(email_obj['To'], only_mail=True),
-        'Date': datetime.fromtimestamp(mktime_tz(parsedate_tz(email_obj['Date']))),
+#        'Date': datetime.fromtimestamp(mktime_tz(parsedate_tz(email_obj['Date']))),
+        'Date': str(email_obj['Date']),
         'Subject': parse_header(email_obj['Subject']),
         'Body': parse_header(body),
         'Attachments': attachments}
