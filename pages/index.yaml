@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  imap2telegram-helm:
+  - apiVersion: v2
+    appVersion: 0.0.5
+    created: "2021-11-08T23:59:38.166476593+02:00"
+    description: A Helm chart for Kubernetes
+    digest: d93eb6543bfea52966152c83f2e0d0a57242600ad119efff0db17688ff2b1a2b
+    name: imap2telegram-helm
+    type: application
+    urls:
+    - https://oleksandr-mazur.github.io/imap2telegram/packages/imap2telegram-helm-0.0.5.tgz
+    version: 0.0.5
+generated: "2021-11-08T23:59:38.164563643+02:00"
