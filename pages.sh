@@ -1,8 +1,7 @@
 #!/bin/bash
-set -x
 
 TAG=$(git tag --points-at)
-APP_VERSION = $TAG
+APP_VERSION=$TAG
 
 if [ -z $TAG ]
 then
@@ -18,11 +17,11 @@ CHART_PATH="../chart"
 # sed -i "s/^appVersion:.*$/appVersion: ${TAG}/" ${CHART_PATH}/Chart.yaml
 sed -i "s/^  tag:.*$/  tag: ${TAG}/" ${CHART_PATH}/values.yaml
 
-if [ $TAG == "latest"]
+if [ "$TAG" == "latest" ]
 then
     helm package ${CHART_PATH}
 else
-    helm package --version ${TAG} --app-version ${TAG} ${CHART_PATH}
+    helm package --version ${APP_VERSION} --app-version ${APP_VERSION} ${CHART_PATH}
 fi
 
 helm repo index --url https://oleksandr-mazur.github.io/imap2telegram/packages/ --merge index.yaml .
