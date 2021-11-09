@@ -24,5 +24,5 @@ else
     helm package --version ${APP_VERSION} --app-version ${APP_VERSION} ${CHART_PATH}
 fi
 
-helm repo index --url https://oleksandr-mazur.github.io/imap2telegram/packages/ --merge index.yaml .
+helm repo index --url https://oleksandr-mazur.github.io/imap2telegram/helm/ --merge index.yaml .
 
