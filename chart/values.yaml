@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/oleksandr-mazur/imap2telegram
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: 0.0.5
+  tag: 0.0.10
 
 imagePullSecrets: []
 nameOverride: ""
