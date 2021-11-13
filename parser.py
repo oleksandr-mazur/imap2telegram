@@ -18,16 +18,20 @@ from email.utils import parsedate_tz, mktime_tz
 log = logging.getLogger(__name__)
 
 
-def get_new_email_id(msg: dict) -> typing.Union[None, int]:
-    if not isinstance(msg, list):
-        return
-    if len(msg) <= 1:
-        return
-    attr = {x.split()[1].decode(): x.split()[0].decode() for x in msg}
-    if "RECENT" in attr:
-        return attr.get("EXISTS")
-    if "FETCH" and "EXISTS":
-        return attr.get("EXISTS")
+def get_new_email_id(msg: dict) -> list:
+    try:
+        attr = {x.decode().split()[1]: x.decode().split()[0] for x in msg}
+        exists = attr["EXISTS"]
+    except (AttributeError, KeyError):
+        return []
+
+    if recent := attr.get("RECENT"):
+        return [str(int(exists) - y) for y in range(int(recent) or 1)]
+
+    if fetch := attr.get("FETCH"):
+        return [str(int(exists) - y) for y in range((int(exists) - int(fetch)))]
+
+    return [exists]
 
 
 def parse_header(data):

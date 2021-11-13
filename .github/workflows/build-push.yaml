@@ -52,30 +52,19 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
 
-      # - name: login to registry using helm
-      #   run: |
-      #     echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ${{ env.GCR_IMAGE }} --username ${{ github.repository_owner }} --password-stdin
-
       - name: configure helm chart
         run: |
           ./pages.sh
 
+      - name: Check for modified files
+        id: git-check
+        run: echo ::set-output name=modified::$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)
+
       - name: Commit report
+        if: steps.git-check.outputs.modified == 'true'
         run: |
           git config --global user.name 'Git action'
           git config --global user.email 'gitaction@github.com'
           git remote set-url --push origin https://oleksandr-mazur:$GITHUB_TOKEN@github.com/${{ github.repository }}
           git commit -am "Automated commit"
           git push
-
-      # - name: save helm chart to local registry
-      #   run: |
-      #     ./tools/utils.sh helm_save ${{ env.GCR_IMAGE }}
-
-      # - name: publish chart to registry
-      #   run: |
-      #     ./tools/utils.sh helm_push ${{ env.GCR_IMAGE }}
-
-      # - name: logout
-      #   run: |
-      #     helm registry logout ${{ env.GCR_IMAGE }}

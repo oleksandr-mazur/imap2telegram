@@ -9,26 +9,33 @@ import os
 import asyncio
 import logging
 
+import filetype
 from aiogram import Bot, types
 from aiogram.utils import exceptions
 
 API_TOKEN = os.environ["TOKEN"]
-ONLY_ATTACHMENT = os.getenv("ONLY_ATTACHMENT") in ("True", "true", "yes")
+ATTACH = os.getenv("ONLY_ATTACHMENT") in ("True", "true", "yes")
 USER_IDS = os.environ["USER_IDS"].replace(" ", "").split(",")
 
 bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
 log = logging.getLogger(__name__)
 
-
 TEMPLATE = """
-**From**: {From}
-**Date**: {Date}
-**Subject**: {Subject}
+<b>New email from</b>: {From}
+<i>Date</i>: {Date}
+<i>Subject:</i> {Subject}
 
-**Body**
-===================
-{Body}
+<pre>{Body}</pre>
 """
+
+def is_file_send_photo(file):
+    available_type = {'image', 'jpeg', 'pdf'}
+    file = filetype.guess(file)
+    if file is None:
+        return False
+    if available_type.intersection(set(file.mime.split("/"))):
+        return True
+    return False
 
 
 async def send_message(user_id: int, msg: dict,
@@ -41,18 +48,17 @@ async def send_message(user_id: int, msg: dict,
     :param disable_notification:
     :return:
     """
-
+    msg['Body'] = msg['Body'][0:4000] #  limit of telegram message
     try:
-        if ONLY_ATTACHMENT:
-            for attachment in msg['Attachments']:
-                await bot.send_photo(user_id,
-                                     attachment['content'],
-                                     caption=msg['Body'])
-        else:
+        if not ATTACH:
             await bot.send_message(user_id, TEMPLATE.format(**msg),
-                                   parse_mode=types.ParseMode.MARKDOWN)
-            for attachment in msg['Attachments']:
-                await bot.send_photo(user_id, attachment['content'])
+                                   parse_mode=types.ParseMode.HTML)
+        for attachment in msg['Attachments']:
+            if is_file_send_photo(attachment['content']):
+                await bot.send_photo(user_id, attachment['content'],
+                                     caption=ATTACH and msg['Body'] or None)
+            else:
+                await bot.send_document(user_id, attachment['content'])
 
     except exceptions.BotBlocked:
         log.error(f"Target [ID:{user_id}]: blocked by user")
