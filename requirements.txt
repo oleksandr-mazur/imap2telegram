@@ -1,2 +1,3 @@
 aioimaplib==0.9.0
 aiogram==2.15
+filetype==1.0.8
