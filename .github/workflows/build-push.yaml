@@ -67,4 +67,4 @@ jobs:
           git config --global user.email 'gitaction@github.com'
           git remote set-url --push origin https://oleksandr-mazur:$GITHUB_TOKEN@github.com/${{ github.repository }}
           git commit -am "Automated commit"
-          git push
+          git push origin master
