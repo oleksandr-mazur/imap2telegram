@@ -66,4 +66,4 @@ jobs:
           git config --global user.name 'Git action'
           git config --global user.email 'gitaction@github.com'
           git commit -am "Automated commit"
-          git push 
+          git push origin HEAD:refs/heads/master --force
