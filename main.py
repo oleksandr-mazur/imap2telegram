@@ -42,7 +42,7 @@ async def wait_for_new_message(host: str, user: str, password: str) -> None:
     while True:
         idle = await imap_client.idle_start(timeout=60)
         msg = await imap_client.wait_server_push()
-        for email_id in get_new_email_id(msg):
+        if email_id := get_new_email_id(msg):
             await asyncio.create_task(
                 get_and_parse_email(host, user, password, email_id))
         log.info(msg)

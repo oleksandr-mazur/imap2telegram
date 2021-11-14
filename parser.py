@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import email
-import typing
+import base64
 import asyncio
 import logging
-import aioimaplib
+import chardet
 
-from datetime import datetime
+import aioimaplib
 
 from telegram import broadcaster
 
@@ -21,17 +21,35 @@ log = logging.getLogger(__name__)
 def get_new_email_id(msg: dict) -> list:
     try:
         attr = {x.decode().split()[1]: x.decode().split()[0] for x in msg}
-        exists = attr["EXISTS"]
+        return attr["EXISTS"]
     except (AttributeError, KeyError):
-        return []
+        return
 
-    if recent := attr.get("RECENT"):
-        return [str(int(exists) - y) for y in range(int(recent) or 1)]
+def body_decode(message) -> str:
+    """Do not fall if cannot decode message"""
+    if isinstance(message, str):
+        message = message.encode()
 
-    if fetch := attr.get("FETCH"):
-        return [str(int(exists) - y) for y in range((int(exists) - int(fetch)))]
+    if not isinstance(message, bytes):
+        log.warning("Message has unsuported format")
+        return str(message)
 
-    return [exists]
+    coding = chardet.detect(message).get('encoding') or 'utf-8'
+
+    try:
+        message = message.decode(coding)
+    except Exception as error:
+        log.error(error)
+        log.error("cannot decode message %s, message type is %s",
+                      message, type(message))
+
+    if len(message.strip()) % 4 == 0:
+        try:
+            message = base64.decodebytes(message)
+        except Exception:
+            pass
+
+    return str(message)
 
 
 def parse_header(data):
@@ -63,9 +81,9 @@ def parse_email(email_obj: email.message) -> dict:
                      "content": part.get_payload(decode=True)})
             # Get body
             if ctype == 'text/plain' and 'attachment' not in cdispo:
-                body = part.get_payload()
+                body = part.get_payload(decode=True)
     else:
-        body = email_obj.get_payload()
+        body = email_obj.get_payload(decode=True)
 
     mail, alias = parse_user_mail(email_obj['From'])
     return {
@@ -75,7 +93,7 @@ def parse_email(email_obj: email.message) -> dict:
 #        'Date': datetime.fromtimestamp(mktime_tz(parsedate_tz(email_obj['Date']))),
         'Date': str(email_obj['Date']),
         'Subject': parse_header(email_obj['Subject']),
-        'Body': parse_header(body),
+        'Body': body_decode(body),
         'Attachments': attachments}
 
 

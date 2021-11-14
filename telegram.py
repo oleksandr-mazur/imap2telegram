@@ -24,7 +24,6 @@ TEMPLATE = """
 <b>New email from</b>: {From}
 <i>Date</i>: {Date}
 <i>Subject:</i> {Subject}
-
 <pre>{Body}</pre>
 """
 
