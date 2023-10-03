@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "imap2telegram-helm.fullname" . }}
+  name: {{ include "imap2telegram.fullname" . }}
   labels:
-    {{- include "imap2telegram-helm.labels" . | nindent 4 }}
+    {{- include "imap2telegram.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "imap2telegram-helm.fullname" . }}
+    name: {{ include "imap2telegram.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

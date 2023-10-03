@@ -14,12 +14,21 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-environments:
-   IMAP_HOST: ""
-   IMAP_USER: ""
-   IMAP_PASSWORD: ""
-   TOKEN: ""
-   USER_IDS: ""
+# application settings
+logLevel: info
+
+imapHost: "127.0.0.1"
+imapUser: "username"
+imapPassword: "password"
+
+telegramIDS: []
+telegramToken: ""
+telegramAttach: true
+
+ntfyURL: ""
+ntfyToken: ""
+ntfyTags: "mag,eye_speech_bubble,mag_right"
+ntfyPriority: "default"
 
 serviceAccount:
   # Specifies whether a service account should be created

@@ -1,3 +1,8 @@
 Dockerfile
 README.md
 .git
+chart
+helm
+tools
+pages.sh
+.spyderproject

@@ -9,10 +9,10 @@ import chardet
 
 import aioimaplib
 
-from telegram import broadcaster
+from imap import telegram
+from imap import ntfy
 
 from email.header import decode_header, make_header
-from email.utils import parsedate_tz, mktime_tz
 
 
 log = logging.getLogger(__name__)
@@ -22,8 +22,9 @@ def get_new_email_id(msg: dict) -> list:
     try:
         attr = {x.decode().split()[1]: x.decode().split()[0] for x in msg}
         return attr["EXISTS"]
-    except (AttributeError, KeyError):
+    except (AttributeError, KeyError, IndexError):
         return
+
 
 def body_decode(message) -> str:
     """Do not fall if cannot decode message"""
@@ -86,11 +87,11 @@ def parse_email(email_obj: email.message) -> dict:
         body = email_obj.get_payload(decode=True)
 
     mail, alias = parse_user_mail(email_obj['From'])
+    log.info("Got new message from %s <%s>", alias, mail)
     return {
         'From': mail,
         'Alias': alias,
         'To': parse_user_mail(email_obj['To'], only_mail=True),
-#        'Date': datetime.fromtimestamp(mktime_tz(parsedate_tz(email_obj['Date']))),
         'Date': str(email_obj['Date']),
         'Subject': parse_header(email_obj['Subject']),
         'Body': body_decode(body),
@@ -107,10 +108,16 @@ async def get_and_parse_email(host: str, user: str, password: str,
 
     _, data = await client.fetch(email_id, '(RFC822)')
     if len(data) > 1:
-        email_message = email.message_from_bytes(data[1])
-        msg = parse_email(email_message)
-        log.info("Got new message from %s <%s>", msg['Alias'], msg['From'])
-        await asyncio.create_task(broadcaster(msg))
+        email_task = asyncio.to_thread(email.message_from_bytes, data[1])
+        email_message = await asyncio.create_task(email_task)
+
+        parse_task = asyncio.to_thread(parse_email, email_message)
+        msg = await asyncio.create_task(parse_task)
+
+
+        # await asyncio.create_task(broadcaster(msg))
+        await ntfy.sender(msg)
+        await telegram.sender(msg)
     else:
         log.error(data)
     await client.logout()

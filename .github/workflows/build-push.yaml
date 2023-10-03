@@ -6,27 +6,32 @@ on:
     - 0.*
     - 1.*
 
+permissions:
+  contents: write
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  HELM_NAME: imap2telegram-helm
-  HELM_EXPERIMENTAL_OCI: 1 #enable OCI support
-  HELM_VERSION_TO_INSTALL: 3.7.1 # version of HEL to install
-  GCR_IMAGE: ghcr.io/${{ github.repository_owner }}/imap2telegram-helm
+  PROJECT_NAME: imap2telegram
+  HELM_NAME: imap2telegram
+  HELM_VERSION_TO_INSTALL: 3.12.3
+  HELM_DIR_NAME: helm-repo
+  OWNER: ${{ github.repository_owner }}
+
+  GCR_IMAGE: ghcr.io/${{ github.repository_owner }}/imap2telegram
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions: write-all
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -34,7 +39,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v5
         with:
           context: .
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -42,30 +47,156 @@ jobs:
 
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
+  build-helm:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - name: Checkout helm repo
+        uses: actions/checkout@v4
+        with:
+          repository: oleksandr-mazur/helm
+          ref: 'gh-pages'
+          path: ${{env.HELM_DIR_NAME}}
+          token: ${{ secrets.TOKEN_GIT }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          path: ${{env.PROJECT_NAME}}
+
       - name: install helm
-        uses: Azure/setup-helm@v1
+        uses: Azure/setup-helm@v3
         with:
           version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
+          token: ${{ github.token }}
 
-      - name: configure helm chart
+      - name: build helm chart
         run: |
-          ./pages.sh
+          WORK_DIR=$(pwd)
 
-      - name: Check for modified files
-        id: git-check
-        run: echo ::set-output name=modified::$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)
+          # Test helm chart
+          cd ${PROJECT_NAME}/chart && helm lint --strict --values values.yaml
+
+          helm package . -d ${WORK_DIR}/${HELM_DIR_NAME}
+
+          cd ${WORK_DIR}/${HELM_DIR_NAME}
+
+          helm repo index --url https://oleksandr-mazur.github.io/helm/ --merge index.yaml .
+
+      - name: Show gh-pages changes
+        run: |
+          cd ${HELM_DIR_NAME}
+          git status
+          git diff
 
       - name: Commit report
-        if: steps.git-check.outputs.modified == 'true'
+        shell: bash
         run: |
+          cd ${HELM_DIR_NAME}
           git config --global user.name 'Git action'
           git config --global user.email 'gitaction@github.com'
+
+          echo "https://${OWNER}:${token}@github.com/${OWNER}/helm.git"
+
+          git remote set-url origin https://${OWNER}:${token}@github.com/${OWNER}/helm.git
+
           git add .
-          git commit -m "Automated commit"
-          git push origin HEAD:refs/heads/master --force
+          git commit -m "Added helm ${PROJECT_NAME}"
+          git push origin gh-pages
+        env:
+          token: ${{ secrets.TOKEN_GIT }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      # - name: Checkout helm repo
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: oleksandr-mazur/helm
+      #     ref: 'gh-pages'
+      #     path: ${{env.HELM_DIR_NAME}}
+      #     token: ${{ secrets.TOKEN_GIT }}
+
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
+      #   with:
+      #     fetch-depth: 1
+      #     path: ${{env.PROJECT_NAME}}
+
+
+      # - name: install helm
+      #   uses: Azure/setup-helm@v3
+      #   with:
+      #     version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
+      #     token: ${{ github.token }}
+
+
+
+
+
+
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
+
+      # - name: Log in to the Container registry
+      #   uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Extract metadata (tags, labels) for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      #   with:
+      #     context: .
+      #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      #     tags: ${{ steps.meta.outputs.tags }}
+
+
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: ${{ steps.meta.outputs.tags }}
+
+      # - name: install helm
+      #   uses: Azure/setup-helm@v1
+      #   with:
+      #     version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
+
+      # - name: configure helm chart
+      #   run: |
+      #     ./pages.sh
+
+      # - name: Check for modified files
+      #   id: git-check
+      #   run: echo ::set-output name=modified::$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)
+
+      # - name: Commit report
+      #   if: steps.git-check.outputs.modified == 'true'
+      #   run: |
+      #     git config --global user.name 'Git action'
+      #     git config --global user.email 'gitaction@github.com'
+      #     git add .
+      #     git commit -m "Automated commit"
+      #     git push origin HEAD:refs/heads/master --force

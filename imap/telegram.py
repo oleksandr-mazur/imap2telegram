@@ -11,13 +11,12 @@ import logging
 
 import filetype
 from aiogram import Bot, types
-from aiogram.utils import exceptions
+from aiogram import exceptions
+from configs import settings
 
-API_TOKEN = os.environ["TOKEN"]
-ATTACH = os.getenv("ONLY_ATTACHMENT") in ("True", "true", "yes")
-USER_IDS = os.environ["USER_IDS"].replace(" ", "").split(",")
+ATTACH = settings.TELEGRAM_ATTACH
 
-bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
+bot = Bot(token=settings.TELEGRAM_TOKEN, parse_mode=types.ParseMode.HTML)
 log = logging.getLogger(__name__)
 
 TEMPLATE = """
@@ -77,7 +76,7 @@ async def send_message(user_id: int, msg: dict,
     return False
 
 
-async def broadcaster(msg) -> int:
+async def sender(msg) -> int:
     """
     Simple broadcaster
 
@@ -85,7 +84,7 @@ async def broadcaster(msg) -> int:
     """
     count = 0
     try:
-        for user_id in USER_IDS:
+        for user_id in settings.TELEGRAM_USER_IDS:
             if await send_message(user_id, msg):
                 count += 1
             await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)

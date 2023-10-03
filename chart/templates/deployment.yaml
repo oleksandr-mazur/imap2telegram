@@ -1,30 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "imap2telegram-helm.fullname" . }}
+  name: {{ include "imap2telegram.fullname" . }}
   labels:
-    {{- include "imap2telegram-helm.labels" . | nindent 4 }}
+    {{- include "imap2telegram.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "imap2telegram-helm.selectorLabels" . | nindent 6 }}
+      {{- include "imap2telegram.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "imap2telegram-helm.selectorLabels" . | nindent 8 }}
+        {{- include "imap2telegram.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "imap2telegram-helm.serviceAccountName" . }}
+      serviceAccountName: {{ include "imap2telegram.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -33,13 +35,15 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-          {{- range $key, $value := .Values.environments }}
-          - name: {{ $key }}
-            value: {{ $value | quote }}
-          {{- end }}
+          volumeMounts:
+          - name: settings
+            mountPath: /app/configs
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: settings
+          configMap:
+            name: {{ .Release.Name }}-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
