@@ -84,8 +84,10 @@ jobs:
 
           # Test helm chart
           cd ${PROJECT_NAME}/chart && helm lint --strict --values values.yaml
+          TAG=$(git tag --points-at) && TAG=${TAG:=0.0.1}
+          echo "Use tag: ${TAG}"
 
-          helm package . -d ${WORK_DIR}/${HELM_DIR_NAME}
+          helm package --version ${TAG} --app-version ${TAG} . -d ${WORK_DIR}/${HELM_DIR_NAME}
 
           cd ${WORK_DIR}/${HELM_DIR_NAME}
 
