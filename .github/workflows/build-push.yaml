@@ -41,7 +41,6 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          context: .
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: ${{ steps.meta.outputs.tags }}
 
