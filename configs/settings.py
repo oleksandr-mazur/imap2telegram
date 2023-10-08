@@ -8,11 +8,6 @@ Created on Fri Sep 22 07:28:42 2023
 
 LOG_LEVEL = 'INFO'
 
-IMAP_HOST = "127.0.0.1"
-IMAP_USER = "username"
-IMAP_PASSWORD = "password"
-
-
 IMAP_HOST = ""
 IMAP_USER = ""
 IMAP_PASSWORD = ''
@@ -25,3 +20,5 @@ NTFY_URL = ""
 NTFY_TOKEN = ""
 NTFY_TAGS = ""
 NTFY_PRIORITY = "default"
+
+from configs.settings_local import *
