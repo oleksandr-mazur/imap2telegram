@@ -13,13 +13,22 @@ from configs import settings
 
 log = logging.getLogger(__name__)
 
-async def sender(msg):
-    data = msg["Body"]
+
+async def sender(msg: dict) -> None:
+    body = msg["Body"]
     title = msg["Subject"]
-    file = msg["Attachments"] and msg["Attachments"][0].get("content")
-    return await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
-                      tags=settings.NTFY_TAGS, priority=settings.NTFY_PRIORITY,
-                      timeout=5, title=title, file=file, msg=data)
+
+    await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
+               tags=settings.NTFY_TAGS, priority=settings.NTFY_PRIORITY,
+               timeout=5, title=title, msg=str(body),
+               markdown=settings.NTFY_MARKDOWN, content_type="text/plain")
+
+    for attachment in msg["Attachments"]:
+        await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
+                   tags=settings.NTFY_TAGS, priority=settings.NTFY_PRIORITY,
+                   timeout=5, title=title, file=attachment["content"],
+                   filename=attachment["original_file_name"], msg=body,
+                   markdown=settings.NTFY_MARKDOWN)
 
 
 async def send(url: str,
@@ -30,20 +39,26 @@ async def send(url: str,
                markdown="no",
                cache="yes",
                file=None,
+               filename="default.jpg",
                priority: str = "default",
-               timeout=10):
+               timeout=10,
+               content_type="text/plain"):
     tmout = aiohttp.ClientTimeout(total=timeout)
 
     async with aiohttp.ClientSession(timeout=tmout) as session:
-        headers = {"Title": title,
+        headers = {"Title": title.replace("\n", " ").replace("\r", ""),
                    "Tags": tags,
                    "Priority": priority,
                    "Markdown": markdown,
                    "Cache": cache,
-                   "Authorization": f"Bearer {token}"
+                   "Authorization": f"Bearer {token}",
+                   "Content-Type": content_type
                    }
         if file:
-            headers["Filename"] = "camera.jpg"
+            headers["Filename"] = filename
 
-        async with session.post(url, headers=headers, data=file or msg) as resp:
-            log.info("Sent message to %s, return code %s", url, resp.status)
+        async with session.post(url, headers=headers, data=file or msg) as r:
+            if file:
+                log.info("Sent file to %s, return code %s", url, r.status)
+            else:
+                log.info("Sent message to %s, return code %s", url, r.status)

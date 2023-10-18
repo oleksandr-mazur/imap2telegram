@@ -6,3 +6,4 @@ helm
 tools
 pages.sh
 .spyderproject
+configs/settings_local.py

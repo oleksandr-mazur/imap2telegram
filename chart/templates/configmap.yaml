@@ -16,9 +16,10 @@ data:
 
     TELEGRAM_USER_IDS = [{{ range .Values.telegramIDS }}"{{ . }}", {{ end }}]
     TELEGRAM_TOKEN = "{{ .Values.telegramToken }}"
-    TELEGRAM_ATTACH = {{ print .Values.telegramAttach | title }}
 
     NTFY_URL = "{{ .Values.ntfyURL }}"
     NTFY_TOKEN = "{{ .Values.ntfyToken }}"
     NTFY_TAGS = "{{ .Values.ntfyTags }}"
     NTFY_PRIORITY = "{{ .Values.ntfyPriority }}"
+
+    NTFY_MARKDOWN = "{{ .Values.ntfyMarkdown }}"

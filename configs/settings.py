@@ -20,5 +20,6 @@ NTFY_URL = ""
 NTFY_TOKEN = ""
 NTFY_TAGS = ""
 NTFY_PRIORITY = "default"
+NTFY_MARKDOWN = "no"
 
 from configs.settings_local import *

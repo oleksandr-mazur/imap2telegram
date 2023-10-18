@@ -23,12 +23,12 @@ imapPassword: "password"
 
 telegramIDS: []
 telegramToken: ""
-telegramAttach: true
 
 ntfyURL: ""
 ntfyToken: ""
 ntfyTags: "mag,eye_speech_bubble,mag_right"
 ntfyPriority: "default"
+ntfyMarkdown: "no"
 
 serviceAccount:
   # Specifies whether a service account should be created
