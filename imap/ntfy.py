@@ -15,7 +15,10 @@ log = logging.getLogger(__name__)
 
 
 async def sender(msg: dict) -> None:
-    body = msg["Body"]
+
+    # Each message can be up to 4,096 bytes long.
+    # Longer messages are treated as attachments.
+    body = msg["Body"].encode()[:4000].decode()
     title = msg["Subject"]
 
     await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
