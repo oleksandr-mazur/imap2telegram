@@ -21,10 +21,11 @@ async def sender(msg: dict) -> None:
     body = msg["Body"].encode()[:4000].decode()
     title = msg["Subject"]
 
-    await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
-               tags=settings.NTFY_TAGS, priority=settings.NTFY_PRIORITY,
-               timeout=5, title=title, msg=str(body),
-               markdown=settings.NTFY_MARKDOWN, content_type="text/plain")
+    if not settings.SEND_ONLY_ATTACHMENT:
+        await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,
+                   tags=settings.NTFY_TAGS, priority=settings.NTFY_PRIORITY,
+                   timeout=5, title=title, msg=str(body),
+                   markdown=settings.NTFY_MARKDOWN, content_type="text/plain")
 
     for attachment in msg["Attachments"]:
         await send(settings.NTFY_URL, token=settings.NTFY_TOKEN,

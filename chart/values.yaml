@@ -17,6 +17,8 @@ fullnameOverride: ""
 # application settings
 logLevel: info
 
+sendOnlyAttachment: false
+
 imapHost: "127.0.0.1"
 imapUser: "username"
 imapPassword: "password"

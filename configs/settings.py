@@ -8,6 +8,8 @@ Created on Fri Sep 22 07:28:42 2023
 
 LOG_LEVEL = 'INFO'
 
+SEND_ONLY_ATTACHMENT = False
+
 IMAP_HOST = ""
 IMAP_USER = ""
 IMAP_PASSWORD = ''
