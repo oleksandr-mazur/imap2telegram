@@ -8,6 +8,8 @@ metadata:
 data:
   settings.py: |
 
+    from urllib.parse import urlparse
+
     LOG_LEVEL = "{{ .Values.logLevel }}"
 
     SEND_ONLY_ATTACHMENT = {{ .Values.sendOnlyAttachment | toString | title }}
@@ -25,8 +27,6 @@ data:
     NTFY_PRIORITY = "{{ .Values.ntfyPriority }}"
 
     NTFY_MARKDOWN = "{{ .Values.ntfyMarkdown }}"
-
-    from configs.settings_local import *
 
     NTFY_TOPIC = urlparse(NTFY_URL).path.strip("/")
 
