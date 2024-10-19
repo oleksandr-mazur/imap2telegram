@@ -1,4 +1,4 @@
-FROM python:3.10.12-slim
+FROM python:3.12.7-slim
 
 RUN useradd -m imap
 RUN mkdir /app && chown -R imap:imap /app

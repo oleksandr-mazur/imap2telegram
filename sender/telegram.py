@@ -11,18 +11,16 @@ import logging
 import filetype
 from aiogram import Bot
 from aiogram import exceptions
+from aiogram.client.default import DefaultBotProperties
+from aiogram.types import BufferedInputFile
+from aiogram.enums import ParseMode
 from configs import settings
 
-
-from aiogram.enums import ParseMode
-
-from aiogram.types import BufferedInputFile
-
-
-bot = Bot(token=settings.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
-
-
 log = logging.getLogger(__name__)
+
+bot = Bot(token=settings.TELEGRAM_TOKEN,
+          default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
 
 TEMPLATE = """
 <b>New email from</b>: {From}
@@ -83,23 +81,15 @@ async def send_message(user_id: int, msg: dict,
     except exceptions.AiogramError:
         log.error(f"Target [ID:{user_id}]: user is deactivated")
     else:
-        log.info(f"Target [ID:{user_id}]: success")
+        log.info("Send email from <{0}> to telegram id {1}".format(
+            msg['From'], user_id))
         return True
     return False
 
 
 async def sender(msg) -> int:
-    """Simple broadcaster.
-
-    :return: Count of messages
-    """
-    count = 0
-    try:
-        for user_id in settings.TELEGRAM_USER_IDS:
-            if await send_message(user_id, msg):
-                count += 1
-            # 20 messages per second (Limit: 30 messages per second)
-            await asyncio.sleep(.05)
-    finally:
-        log.info(f"{count} messages successful sent.")
-    return count
+    """Send message to telegram ids sets in TELEGRAM_USER_IDS."""
+    for user_id in settings.TELEGRAM_USER_IDS:
+        await send_message(user_id, msg)
+        # 20 messages per second (Limit: 30 messages per second)
+        await asyncio.sleep(.05)

@@ -6,11 +6,12 @@ import base64
 import asyncio
 import logging
 import chardet
-
+import random
 import aioimaplib
 
-from imap import telegram
-from imap import ntfy
+from sender import telegram
+from sender import ntfy
+from configs import settings
 
 from email.header import decode_header, make_header
 
@@ -18,16 +19,8 @@ from email.header import decode_header, make_header
 log = logging.getLogger(__name__)
 
 
-def get_new_email_id(msg: dict) -> list:
-    try:
-        attr = {x.decode().split()[1]: x.decode().split()[0] for x in msg}
-        return attr["EXISTS"]
-    except (AttributeError, KeyError, IndexError):
-        return
-
-
 def body_decode(message) -> str:
-    """Do not fall if cannot decode message"""
+    """Do not fall if cannot decode message."""
     if isinstance(message, str):
         message = message.encode()
 
@@ -42,7 +35,7 @@ def body_decode(message) -> str:
     except Exception as error:
         log.error(error)
         log.error("cannot decode message %s, message type is %s",
-                      message, type(message))
+                  message, type(message))
 
     if len(message.strip()) % 4 == 0:
         try:
@@ -54,10 +47,12 @@ def body_decode(message) -> str:
 
 
 def parse_header(data):
+    """Parse header."""
     return str(make_header(decode_header(data)))
 
 
 def parse_user_mail(addr, only_mail=False):
+    """Parse user and email."""
     alias, mail = email.utils.parseaddr(addr)
     if only_mail:
         return mail
@@ -65,9 +60,7 @@ def parse_user_mail(addr, only_mail=False):
 
 
 def parse_email(email_obj: email.message) -> dict:
-    """Parse email object
-    return json in byte code
-    """
+    """Parse email object return json in byte code."""
     body = ""
     attachments = []
     if email_obj.is_multipart():
@@ -100,6 +93,7 @@ def parse_email(email_obj: email.message) -> dict:
 
 async def get_and_parse_email(host: str, user: str, password: str,
                               email_id: int):
+    """Get message from server and pass to processing."""
     client = aioimaplib.IMAP4_SSL(host=host)
     await client.wait_hello_from_server()
 
@@ -114,8 +108,6 @@ async def get_and_parse_email(host: str, user: str, password: str,
         parse_task = asyncio.to_thread(parse_email, email_message)
         msg = await asyncio.create_task(parse_task)
 
-
-        # await asyncio.create_task(broadcaster(msg))
         await ntfy.sender(msg)
         await telegram.sender(msg)
     else:
