@@ -25,3 +25,8 @@ data:
     NTFY_PRIORITY = "{{ .Values.ntfyPriority }}"
 
     NTFY_MARKDOWN = "{{ .Values.ntfyMarkdown }}"
+
+    from configs.settings_local import *
+
+    NTFY_TOPIC = urlparse(NTFY_URL).path.strip("/")
+
