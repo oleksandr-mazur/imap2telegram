@@ -94,11 +94,15 @@ def parse_email(email_obj: email.message) -> dict:
 async def get_and_parse_email(host: str, user: str, password: str,
                               email_id: int):
     """Get message from server and pass to processing."""
+    log.info(f"Start processind task-{email_id}")
     client = aioimaplib.IMAP4_SSL(host=host)
     await client.wait_hello_from_server()
 
     await client.login(user, password)
     await client.select(mailbox='INBOX')
+
+    # await client.store(str(email_id), '+FLAGS', '\\seen')
+    # log.info(f"Mark email_id-{email_id} as seen")
 
     _, data = await client.fetch(email_id, '(RFC822)')
     if len(data) > 1:
