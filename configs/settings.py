@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 LOG_LEVEL = 'INFO'
 
 SEND_ONLY_ATTACHMENT = False
+DELETE_SEEN_EMAIL = False
 
 IMAP_HOST = ""
 IMAP_USER = ""

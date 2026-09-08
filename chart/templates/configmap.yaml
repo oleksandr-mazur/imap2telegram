@@ -13,6 +13,7 @@ data:
     LOG_LEVEL = "{{ .Values.logLevel }}"
 
     SEND_ONLY_ATTACHMENT = {{ .Values.sendOnlyAttachment | toString | title }}
+    DELETE_SEEN_EMAIL = {{ .Values.deleteSeenEmail | toString | title }}
 
     IMAP_HOST = "{{ .Values.imapHost }}"
     IMAP_USER = "{{ .Values.imapUser }}"

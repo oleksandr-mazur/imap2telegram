@@ -12,6 +12,7 @@ import asyncio
 import aioimaplib
 
 from imap.parser import get_and_parse_email
+from configs import settings
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +30,12 @@ def unseen_mail(result) -> list:
     """Return unseen email ids."""
     if result.result == "OK":
         return [int(x) for x in result.lines.pop(0).decode().split()]
+    return []
+
+def seen_mail(result) -> list:
+    """Return unseen email ids."""
+    if result.result == "OK":
+        return [int(x) for x in result.lines[0].decode().split()]
     return []
 
 
@@ -86,6 +93,15 @@ async def wait_for_new_message(host: str, user: str, password: str) -> None:
                     run_handler(host, user, password, email_id)
             else:
                 log.info("Unseen emails not found")
+
+            if settings.DELETE_SEEN_EMAIL:
+                if seen_ids := seen_mail(await client.search("SEEN")):
+                    log.info(f"Found seen emails ids: {seen_ids}")
+                for seen_id in seen_ids:
+                    await client.store(seen_id, "+FLAGS", "\\Deleted")
+                await client.expunge()
+            else:
+                log.info("Seen emails not found")
 
     except asyncio.CancelledError:
         logging.info("Send DONE to server... ")

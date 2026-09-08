@@ -18,6 +18,7 @@ fullnameOverride: ""
 logLevel: info
 
 sendOnlyAttachment: false
+deleteSeenEmail: false
 
 imapHost: "127.0.0.1"
 imapUser: "username"
